@@ -24,7 +24,7 @@ services:
     ports:
       - 7777:8080
 
-    trillian-map-server:
+  trillian-map-server:
     restart: always
     depends_on:
       - db
