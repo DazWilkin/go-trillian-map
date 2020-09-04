@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
+	"crypto/sha256"
 	"flag"
 	"log"
+	"time"
 
 	"github.com/google/trillian"
 	"google.golang.org/grpc"
@@ -27,34 +28,54 @@ func main() {
 
 	c := trillian.NewTrillianMapWriteClient(conn)
 
+	client := NewClient(c, *tMapID)
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	client := NewClient(c, *tMapID)
+	rev := int64(2)
+	for k, v := range map[string]string{
+		"Freddie":  "Border Collie",
+		"Noisette": "Australian Shepherd",
+		"Artie":    "Weimeraner",
+		"Louie":    "Formosan Mountain Dog",
+		"Luna":     "Yorkiepoo",
+		"Bertie":   "Cockapoo",
+		"Unnamed":  "Scottish Terrier",
+	} {
+		log.Printf("[main] %s", k)
 
-	index, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
-	if err != nil {
-		log.Fatal(err)
-	}
+		hasher := sha256.New()
+		hasher.Write([]byte(k))
+		index := hasher.Sum(nil)
 
-	leaf := &trillian.MapLeaf{
-		Index:     index,
-		LeafValue: []byte("Freddie"),
-	}
+		log.Printf("[main] %s: %x", k, index)
 
-	// Add
-	{
-		err := client.Add(ctx, leaf, 1)
-		if err != nil {
-			log.Fatal(err)
+		leaf := &trillian.MapLeaf{
+			Index:     index,
+			LeafValue: []byte(v),
 		}
-	}
-	// Get
-	{
-		err := client.Get(ctx, leaf, 1)
-		if err != nil {
-			log.Fatal(err)
+		log.Printf("[main] Leaf:\n%+v", leaf)
+
+		// Add
+		{
+			log.Printf("[main:Add] %s", k)
+			err := client.Add(ctx, leaf, rev)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+		// Get
+		{
+			log.Printf("[main:Get] %s", k)
+			err := client.Get(ctx, leaf, rev)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		rev++
+		log.Print("[main] Sleeping 5 seconds")
+		time.Sleep(5 * time.Second)
 	}
 }
