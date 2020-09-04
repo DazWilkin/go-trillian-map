@@ -38,9 +38,7 @@ MAPID=$(\
 go run github.com/google/trillian/cmd/createtree \
 --admin_server=:${GRPC} \
 --tree_type=MAP \
---hash_strategy=CONIKS_SHA512_256 \
---display_name="freddiemap" \
---description="First ever Trillian Map") && echo ${MAPID}
+--hash_strategy=CONIKS_SHA512_256) && echo ${MAPID}
 ```
 
 Results:
