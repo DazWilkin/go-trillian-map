@@ -1,0 +1,77 @@
+version: "3"
+
+services:
+  db:
+    image: mariadb@${MARIADB_DIGEST}
+    container_name: db
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: zaphod
+    volumes:
+      - "trillian-data:/var/lib/mysql"
+    expose:
+      - "3306"
+    ports:
+      - 3306:3306
+
+  adminer:
+    depends_on:
+      - db
+    image: adminer:${ADMINER_VERSION}
+    container_name: adminer
+    ports:
+      - 7777:8080
+
+    trillian-map-server:
+    restart: always
+    depends_on:
+      - db
+    image: gcr.io/trillian-opensource-ci/map_server:${TRILLIAN_VERSION}
+    container_name: trillian-map-server
+    command:
+      - --storage_system=mysql
+      - --mysql_uri=test:zaphod@tcp(db:3306)/test
+      - --rpc_endpoint=:50051
+      - --http_endpoint=:8080
+      - --alsologtostderr
+    expose:
+      - "8080" # HTTP
+      - "50051" # gRPC
+    ports:
+      - "8083:8080"
+      - "53051:50051" # Expose gRPC Endpoint to host to permit map creation externally
+
+  cadvisor:
+    restart: always
+    image: gcr.io/google-containers/cadvisor@${CADVISOR_DIGEST}
+    # Don't stipulate `container_name` permit it to be dynamically generated; avoids collisions with other Compose files
+    # container_name: cadvisor
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:rw"
+      - "/sys:/sys:ro"
+      - "/var/snap/docker/current:/var/lib/docker:ro" #- "/var/lib/docker/:/var/lib/docker:ro"
+    devices:
+      - "/dev/kmsg:/dev/kmsg"
+    expose:
+      - "8080"
+    ports:
+      - 8086:8080
+
+  prometheus:
+    restart: always
+    image: prom/prometheus@${PROMETHEUS_DIGEST}
+    # Don't stipulate `container_name` permit it to be dynamically generated; avoids collisions with other Compose files
+    # container_name: prometheus
+    volumes:
+      - "${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml"
+    expose:
+      - "9090" # HTTP Endpoint
+    ports:
+      - "9090:9090"
+
+volumes:
+  trillian-data:
+    external: true

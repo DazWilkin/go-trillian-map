@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Self
+  - job_name: "prometheus-server"
+    static_configs:
+      - targets:
+          - "localhost:9090"
+
+  # Trillian Servers export Prometheus metrics directly
+  # - job_name: "trillian-log-server"
+  #   static_configs:
+  #     - targets:
+  #         - "trillian-log-server:8080"
+  # - job_name: "trillian-log-signer"
+  #   static_configs:
+  #     - targets:
+  #         - "trillian-log-signer:8080"
+  - job_name: "trillian-map-server"
+    static_configs:
+      - targets:
+          - "trillian-map-server:8080"
+
+  # cAdvisor exports metrics for *all* containers running on this host
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - "cadvisor:8080"
