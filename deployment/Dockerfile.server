@@ -1,0 +1,29 @@
+FROM golang:1.15 as build
+
+ARG PROJECT="go-trillian-map"
+WORKDIR /${PROJECT}
+
+# GitHub Personal Access Token to access private repo
+ARG TOKEN
+ARG MODULE="github.com/DazWilkin/${PROJECT}"
+ARG REPO="${MODULE}.git"
+
+RUN echo "https://${TOKEN}@${REPO}"
+RUN git clone https://${TOKEN}@${REPO} .
+
+ARG BUILD_TIME
+ARG GIT_COMMIT
+RUN GOOS=linux \
+    go build -a -installsuffix cgo \
+    -ldflags "-X ${MODULE}/cmd/server/main.BuildTime=${BUILD_TIME} -X ${MODULE}/cmd/server/main.GitCommit=${GIT_COMMIT}" \
+    -o /bin/server \
+    ${MODULE}/cmd/server
+
+FROM gcr.io/distroless/base-debian10
+
+COPY --from=build /bin/server /
+
+USER 999
+
+ENTRYPOINT ["/server"]
+CMD ["--tmap_endpoint=:53051","tmap_id=0","--tmap_rev=1"]
