@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app: map-server
+      name: map-server
+    spec:
+      selector:
+        app: map-server
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+        - name: grpc
+          port: 50051
+          targetPort: 50051
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: map-server
+      name: map-server
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: map-server
+      template:
+        metadata:
+          labels:
+            app: map-server
+        spec:
+          containers:
+            - name: map-server
+              image: gcr.io/trillian-opensource-ci/map_server:v1.3.10
+              args:
+                - --storage_system=mysql
+                - --mysql_uri=test:zaphod@tcp(db:3306)/test
+                - --rpc_endpoint=:50051
+                - --http_endpoint=:8080
+                - --alsologtostderr
+              ports:
+                - containerPort: 8080
+                  name: http
+                - containerPort: 50051
+                  name: grpc
+          restartPolicy: Always

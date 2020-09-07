@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: server
+      name: server
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: server
+      template:
+        metadata:
+          labels:
+            app: server
+        spec:
+          imagePullSecrets:
+            - name: gcr
+          containers:
+            - name: server
+              image: gcr.io/go-trillian-map/server:9241fbdbb08766637968271a569eb23d5218b928
+              args:
+                - --tmap_endpoint=map-server.trillian:50051
+                - --tmap_id=5754718191229411963
+                - --tmap_rev=2
+              ports: []
+          restartPolicy: Never # not idempotent so don't restart; increment `--tmap_rev`

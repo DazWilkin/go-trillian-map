@@ -59,13 +59,28 @@ And:
 
 See: https://github.com/google/trillian/issues/1498
 
-
 ## Build
+
+### Local
+
+```bash
+BUILD_TIME="$(date --rfc-3339=seconds | sed 's| |T|')" # Replaces space with "T"
+GIT_COMMIT="$(git rev-parse HEAD)"
+
+GOOS=linux \
+go build -a -installsuffix cgo \
+-ldflags "-X main.buildTime=${BUILD_TIME} -X main.gitCommit=${GIT_COMMIT}" \
+-o ./server \
+./cmd/server
+```
+
+### Docker
 
 ```bash
 TOKEN="..."
 BUILD_TIME="$(date --rfc-3339=seconds | sed 's| |T|')" # Replaces space with "T"
 GIT_COMMIT="$(git rev-parse HEAD)"
+
 docker build \
 --build-arg=TOKEN=${TOKEN} \
 --build-arg=BUILD_TIME=${BUILD_TIME} \
@@ -81,18 +96,22 @@ docker build \
 
 ```bash
 GRPC="53051"
+
 go run github.com/DazWilkin/go-trillian-map/cmd/server \
 --tmap_endpoint=:${GRPC} \
 --tmap_id=${MAPID} \
 --tmap_rev=1
 ```
 
+> **NOTE** Or use `./server` if built
+
 ### Docker
 
 ```bash
-GIT_COMMIT="$(git rev-parse HEAD)"
 MAPID="..."
 GRPC="53051"
+GIT_COMMIT="$(git rev-parse HEAD)"
+
 docker run \
 --interactive --tty \
 --net=host \
@@ -121,4 +140,60 @@ And:
 |------|-------|-----------|---------|
 |`3675790868355398218|0000000000000000000000000000000000000000000000000000000000000000`|`1`|`77 bytes`|
 
+
+## Kubernetes
+
+
+```bash
+NAMESPACE="cruithne"
+
+kubectl create namespace ${NAMESPACE}
+```
+
+Then Service Account for GCR:
+
+```bash
+ACCOUNT="microk8s"
+
+gcloud iam service-accounts create ${ACCOUNT} \
+--project=${PROJECT}
+
+gcloud iam service-accounts keys create ./${ACCOUNT}.json  \
+--iam-account=${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com \
+--project=${PROJECT}
+
+gcloud projects add-iam-policy-binding ${PROJECT} \
+--member=serviceAccount:${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com \
+--role=roles/storage.objectViewer
+
+kubectl create secret docker-registry gcr \
+--docker-server=https://gcr.io \
+--docker-username=_json_key \
+--docker-email=dazwilkin@gmail.com \
+--docker-password="$(cat ./${ACCOUNT}.json)" \
+--namespace=${NAMESPACE}
+```
+
+Perhaps:
+
+```bash
+gcloud auth print-access-token |\
+docker login -u oauth2accesstoken --password-stdin https://gcr.io
+```
+
+Create Map:
+
+```bash
+```bash
+HOST=$(kubectl get service/map-server --namespace=trillian --output=jsonpath="{.spec.clusterIP}")
+PORT="50051"
+MAPID=$(go run github.com/google/trillian/cmd/createtree --admin_server=${HOST}:${PORT} --tree_type=MAP --hash_strategy=CONIKS_SHA512_256) && echo ${MAPID}
+```
+
+Apply `personality.server.yaml`
+
+```bash
+kubectl apply --filename=./kubernetes/personality.server.yaml --namespace=${NAMESPACE}
+kubectl logs deployments/server --namespace=${NAMESPACE}
+```
 
