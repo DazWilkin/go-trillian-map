@@ -14,6 +14,7 @@ import (
 var (
 	tMapEndpoint = flag.String("tmap_endpoint", "", "The gRPC endpoint of the Trillian Map Server")
 	tMapID       = flag.Int64("tmap_id", 0, "Trillian Map ID")
+	tMapRevision = flag.Int64("tmap_rev", 0, "Trillian Map ID current revision")
 )
 
 func main() {
@@ -34,48 +35,70 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	rev := int64(2)
-	for k, v := range map[string]string{
-		"Freddie":  "Border Collie",
-		"Noisette": "Australian Shepherd",
-		"Artie":    "Weimeraner",
-		"Louie":    "Formosan Mountain Dog",
-		"Luna":     "Yorkiepoo",
-		"Bertie":   "Cockapoo",
-		"Unnamed":  "Scottish Terrier",
-	} {
-		log.Printf("[main] %s", k)
+	// `rev` must start at +1 previous `rev` values for a given map
+	// There are 7 examples, but these are added as a single batch
+	// So, each iteration should be `rev`+1 (one)
+	rev := int64(*tMapRevision)
 
-		hasher := sha256.New()
-		hasher.Write([]byte(k))
-		index := hasher.Sum(nil)
+	// Add many
+	{
+		leaves := make([]*trillian.MapLeaf, len(Examples))
+		i := 0
+		for k, v := range Examples {
+			log.Printf("[main:add] %s", k)
 
-		log.Printf("[main] %s: %x", k, index)
+			hasher := sha256.New()
+			hasher.Write([]byte(k))
+			index := hasher.Sum(nil)
 
-		leaf := &trillian.MapLeaf{
-			Index:     index,
-			LeafValue: []byte(v),
+			log.Printf("[main:add] %s: %x", k, index)
+
+			leaf := &trillian.MapLeaf{
+				Index:     index,
+				LeafValue: []byte(v),
+			}
+			log.Printf("[main:add] Leaf #%02d:\n%+v", i, leaf)
+			leaves[i] = leaf
+			i = i + 1
 		}
-		log.Printf("[main] Leaf:\n%+v", leaf)
-
-		// Add
 		{
-			log.Printf("[main:Add] %s", k)
-			err := client.Add(ctx, leaf, rev)
+			log.Print("[main:add] Add'ing")
+			err := client.Add(ctx, leaves, rev)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		// Get
-		{
-			log.Printf("[main:Get] %s", k)
-			err := client.Get(ctx, leaf, rev)
-			if err != nil {
-				log.Fatal(err)
+
+	}
+	// Get each
+	{
+		for k, v := range Examples {
+			log.Printf("[main:get] %s", k)
+
+			hasher := sha256.New()
+			hasher.Write([]byte(k))
+			index := hasher.Sum(nil)
+
+			log.Printf("[main:get] %s: %x", k, index)
+
+			leaf := &trillian.MapLeaf{
+				Index:     index,
+				LeafValue: []byte(v),
 			}
+			log.Printf("[main:get] Leaf:\n%+v", leaf)
+
+			{
+				log.Printf("[main:get] Get'ing %s", k)
+				leaves, err := client.Get(ctx, leaf, rev)
+				if err != nil {
+					log.Fatal(err)
+				}
+				for i, leaf := range leaves {
+					log.Printf("[main:get] Leaf #%02d:\n%+v\n", i, leaf)
+				}
+			}
+			log.Print("[main:get] Sleeping 1 second")
+			time.Sleep(1 * time.Second)
 		}
-		rev++
-		log.Print("[main] Sleeping 5 seconds")
-		time.Sleep(5 * time.Second)
 	}
 }
