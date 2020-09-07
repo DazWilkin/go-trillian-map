@@ -49,10 +49,10 @@ SELECT * FROM `Trees`
 
 And:
 
-|TreeId|TreeState|TreeType|HashStrategy|HashAlgorithm|SignatureAlgorithm|DisplayName|Description|
-|------|---------|--------|------------|-------------|------------------|-----------|-----------|
-|3675790868355398218|ACTIVE|MAP|CONIKS_SHA512_256|SHA256|ECDSA|freddiemap|Trillian Map|
-|3962226858249318401|ACTIVE|LOG|RFC6962_SHA256|SHA256|ECDSA|
+|TreeId|TreeState|TreeType|HashStrategy|HashAlgorithm|SignatureAlgorithm|
+|------|---------|--------|------------|-------------|------------------|
+|`3675790868355398218`|`ACTIVE`|`MAP`|`CONIKS_SHA512_256`|`SHA256`|`ECDSA`|
+|`3962226858249318401`|`ACTIVE`|`LOG`|`RFC6962_SHA256`|`SHA256`|`ECDSA`|
 
 
 > **NOTE** `LOG` was created with defaults
@@ -86,6 +86,6 @@ And:
 
 |TreeId|KeyHash|MapRevision|LeafValue|
 |------|-------|-----------|---------|
-|3675790868355398218|0000000000000000000000000000000000000000000000000000000000000000|1|77 bytes|
+|`3675790868355398218|0000000000000000000000000000000000000000000000000000000000000000`|`1`|`77 bytes`|
 
 
