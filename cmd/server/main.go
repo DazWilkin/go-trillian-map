@@ -11,6 +11,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Build info
+var (
+	BuildDate string
+	GitCommit string
+)
+
 var (
 	tMapEndpoint = flag.String("tmap_endpoint", "", "The gRPC endpoint of the Trillian Map Server")
 	tMapID       = flag.Int64("tmap_id", 0, "Trillian Map ID")
@@ -18,6 +24,11 @@ var (
 )
 
 func main() {
+
+	// Print build info
+	log.Printf("[main] BuildDate: %s", BuildDate)
+	log.Printf("[main] GitCommit: %s", GitCommit)
+
 	flag.Parse()
 
 	// Create Trillian Map (gRPC) Client
