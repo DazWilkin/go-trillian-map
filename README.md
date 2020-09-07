@@ -66,7 +66,8 @@ See: https://github.com/google/trillian/issues/1498
 GRPC="53051"
 go run github.com/DazWilkin/go-trillian-map/cmd/server \
 --tmap_endpoint=:${GRPC} \
---tmap_id=${MAPID}
+--tmap_id=${MAPID} \
+--tmap_rev=1
 ```
 
 Yields:
