@@ -60,7 +60,24 @@ And:
 See: https://github.com/google/trillian/issues/1498
 
 
+## Build
+
+```bash
+TOKEN="..."
+BUILD_TIME="$(date --rfc-3339=seconds | sed 's| |T|')" # Replaces space with "T"
+GIT_COMMIT="$(git rev-parse HEAD)"
+docker build \
+--build-arg=TOKEN=${TOKEN} \
+--build-arg=BUILD_TIME=${BUILD_TIME} \
+--build-arg=GIT_COMMIT=${GIT_COMMIT} \
+--tag=gcr.io/go-trillian-map/server:${GIT_COMMIT} \
+--file=./deployment/Dockerfile.server \
+.
+```
+
 ## Run
+
+### Local
 
 ```bash
 GRPC="53051"
@@ -68,6 +85,21 @@ go run github.com/DazWilkin/go-trillian-map/cmd/server \
 --tmap_endpoint=:${GRPC} \
 --tmap_id=${MAPID} \
 --tmap_rev=1
+```
+
+### Docker
+
+```bash
+GIT_COMMIT="$(git rev-parse HEAD)"
+MAPID="..."
+GRPC="53051"
+docker run \
+--interactive --tty \
+--net=host \
+gcr.io/go-trillian-map/server:${GIT_COMMIT} \
+--tmap_endpoint=:${GRPC} \
+--tmap_id=${MAPID} \
+--tmap_rev=...
 ```
 
 Yields:
