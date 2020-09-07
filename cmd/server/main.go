@@ -13,8 +13,8 @@ import (
 
 // Build info
 var (
-	BuildDate string
-	GitCommit string
+	buildTime string
+	gitCommit string
 )
 
 var (
@@ -24,12 +24,17 @@ var (
 )
 
 func main() {
-
 	// Print build info
-	log.Printf("[main] BuildDate: %s", BuildDate)
-	log.Printf("[main] GitCommit: %s", GitCommit)
+	log.Printf("[main] BuildTime: %s", buildTime)
+	log.Printf("[main] GitCommit: %s", gitCommit)
 
 	flag.Parse()
+	if *tMapID == 0 {
+		log.Fatal("--tmap_id must be non-zero")
+	}
+	if *tMapRevision == 0 {
+		log.Fatal("--tmap_rev must be non-zero")
+	}
 
 	// Create Trillian Map (gRPC) Client
 	conn, err := grpc.Dial(*tMapEndpoint, grpc.WithInsecure())
