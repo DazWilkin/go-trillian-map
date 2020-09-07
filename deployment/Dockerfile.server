@@ -13,9 +13,13 @@ RUN git clone https://${TOKEN}@${REPO} .
 
 ARG BUILD_TIME
 ARG GIT_COMMIT
+
+RUN echo "buildTime=${BUILD_TIME}"
+RUN echo "gitCommit=${GIT_COMMIT}"
+
 RUN GOOS=linux \
     go build -a -installsuffix cgo \
-    -ldflags "-X ${MODULE}/cmd/server/main.BuildTime=${BUILD_TIME} -X ${MODULE}/cmd/server/main.GitCommit=${GIT_COMMIT}" \
+    -ldflags "-X main.buildTime=${BUILD_TIME} -X main.gitCommit=${GIT_COMMIT}" \
     -o /bin/server \
     ${MODULE}/cmd/server
 
