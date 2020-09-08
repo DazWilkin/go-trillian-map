@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -73,7 +74,7 @@ func main() {
 				Index:     index,
 				LeafValue: []byte(v),
 			}
-			log.Printf("[main:add] Leaf #%02d:\n%+v", i, leaf)
+			log.Printf("[main:add] Leaf #%02d: %s", i, toString(leaf))
 			leaves[i] = leaf
 			i = i + 1
 		}
@@ -88,7 +89,7 @@ func main() {
 	}
 	// Get each
 	{
-		for k, v := range Examples {
+		for k := range Examples {
 			log.Printf("[main:get] %s", k)
 
 			hasher := sha256.New()
@@ -97,24 +98,24 @@ func main() {
 
 			log.Printf("[main:get] %s: %x", k, index)
 
-			leaf := &trillian.MapLeaf{
-				Index:     index,
-				LeafValue: []byte(v),
-			}
-			log.Printf("[main:get] Leaf:\n%+v", leaf)
-
 			{
 				log.Printf("[main:get] Get'ing %s", k)
-				leaves, err := client.Get(ctx, leaf, rev)
+				indexes := [][]byte{
+					index,
+				}
+				leaves, err := client.Get(ctx, indexes, rev)
 				if err != nil {
 					log.Fatal(err)
 				}
 				for i, leaf := range leaves {
-					log.Printf("[main:get] Leaf #%02d:\n%+v\n", i, leaf)
+					log.Printf("[main:get] Leaf #%02d: %s", i, toString(leaf))
 				}
 			}
 			log.Print("[main:get] Sleeping 1 second")
 			time.Sleep(1 * time.Second)
 		}
 	}
+}
+func toString(l *trillian.MapLeaf) string {
+	return fmt.Sprintf("Index: %x, Value: %s", l.GetIndex(), l.GetLeafValue())
 }
