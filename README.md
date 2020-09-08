@@ -185,9 +185,24 @@ Create Map:
 
 ```bash
 ```bash
-HOST=$(kubectl get service/map-server --namespace=trillian --output=jsonpath="{.spec.clusterIP}")
-PORT="50051"
-MAPID=$(go run github.com/google/trillian/cmd/createtree --admin_server=${HOST}:${PORT} --tree_type=MAP --hash_strategy=CONIKS_SHA512_256) && echo ${MAPID}
+ENDPOINT=$(\
+  kubectl get service/map-server \
+  --namespace=trillian \
+  --output=jsonpath="{.spec.clusterIP}:{.spec.ports[?(@.name==\"grpc\")].port}"\
+) && echo ${ENDPOINT}
+
+MAPID=$(go run github.com/google/trillian/cmd/createtree --admin_server=${ENDPOINT} --tree_type=MAP --hash_strategy=CONIKS_SHA512_256) && echo ${MAPID}
+```
+
+Test off-cluster:
+
+```bash
+MAPID="..."
+
+go run ./cmd/server \
+--tmap_endpoint=${ENDPOINT} \
+--tmap_id=${MAPID} \
+--tmap_rev=...
 ```
 
 Apply `personality.server.yaml`
