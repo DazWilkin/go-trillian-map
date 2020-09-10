@@ -64,7 +64,7 @@ See: https://github.com/google/trillian/issues/1498
 ### Local
 
 ```bash
-BUILD_TIME="$(date --rfc-3339=seconds | sed 's| |T|')" # Replaces space with "T"
+BUILD_TIME="$(date --rfc-3339=seconds | sed 's|\s|T|')" # Replaces space with "T"
 GIT_COMMIT="$(git rev-parse HEAD)"
 
 GOOS=linux \
@@ -78,7 +78,7 @@ go build -a -installsuffix cgo \
 
 ```bash
 TOKEN="..."
-BUILD_TIME="$(date --rfc-3339=seconds | sed 's| |T|')" # Replaces space with "T"
+BUILD_TIME="$(date --rfc-3339=seconds | sed 's|\s|T|')" # Replaces space with "T"
 GIT_COMMIT="$(git rev-parse HEAD)"
 
 docker build \
@@ -200,6 +200,18 @@ Test off-cluster:
 MAPID="..."
 
 go run ./cmd/server \
+--tmap_endpoint=${ENDPOINT} \
+--tmap_id=${MAPID} \
+--tmap_rev=...
+```
+
+Or:
+
+```bash
+GIT_COMMIT=$(git rev-parse HEAD); \
+docker run \
+--interactive --tty \
+gcr.io/go-trillian-map/server:${GIT_COMMIT} \
 --tmap_endpoint=${ENDPOINT} \
 --tmap_id=${MAPID} \
 --tmap_rev=...
