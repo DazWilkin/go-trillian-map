@@ -76,7 +76,7 @@ func main() {
 			}
 			log.Printf("[main:add] Leaf #%02d: %s", i, toString(leaf))
 			leaves[i] = leaf
-			i = i + 1
+			i++
 		}
 		{
 			log.Print("[main:add] Add'ing")
@@ -113,6 +113,34 @@ func main() {
 			}
 			log.Print("[main:get] Sleeping 1 second")
 			time.Sleep(1 * time.Second)
+		}
+	}
+
+	// Get prior revisions
+	{
+		log.Print("[main:revisions] Build indexes")
+		indexes := make([][]byte, len(Examples))
+		i := 0
+		for k := range Examples {
+			log.Printf("[main:revisions] %s", k)
+
+			hasher := sha256.New()
+			hasher.Write([]byte(k))
+			index := hasher.Sum(nil)
+			indexes[i] = index
+			i++
+		}
+
+		log.Print("[main:revisions] Iterate")
+		for j := rev; j >= 1; j-- {
+			log.Printf("[main:revisions] Rev: %02d", j)
+			leaves, err := client.Get(ctx, indexes, j)
+			if err != nil {
+				log.Println(err)
+			}
+			for k, leaf := range leaves {
+				log.Printf("[main:revisions] Rev %02d Leaf #%02d: %s", j, k, toString(leaf))
+			}
 		}
 	}
 }
